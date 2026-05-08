@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StabTrack Pro - Stability Scheduler (Supabase)</title>
+    <!-- Supabase JS Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: #f8f9fa;
+            color: #1a1a2e;
+        }
+
+        /* Layout */
+        .app {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            background: white;
+            border-right: 1px solid #e9ecef;
+            padding: 32px 0;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .logo {
+            padding: 0 24px;
+            margin-bottom: 32px;
+        }
+
+        .logo h1 {
+            font-size: 22px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .logo p {
+            font-size: 12px;
+            color: #868e96;
+            margin-top: 4px;
+        }
+
+        .nav-menu {
+            list-style: none;
+        }
+
+        .nav-item {
+            padding: 12px 24px;
+            margin: 4px 12px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            color: #495057;
+            transition: all 0.2s;
+        }
+
+        .nav-item:hover {
+            background: #f8f9fa;
+        }
+
+        .nav-item.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            margin-left: 260px;
+            padding: 32px 40px;
+        }
+
+        /* Cards */
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 28px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            border: 1px solid #e9ecef;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .card-header h2 {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 20px;
+            padding: 24px;
+            border: 1px solid #e9ecef;
+            transition: all 0.2s;
+        }
+
+        .stat-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+
+        .stat-card h3 {
+            font-size: 32px;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 8px;
+        }
+
+        .stat-card p {
+            font-size: 14px;
+            color: #868e96;
+        }
+
+        /* Forms */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            font-size: 14px;
+            color: #495057;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1.5px solid #e9ecef;
+            border-radius: 12px;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        /* Checkbox Group */
+        .checkbox-group {
+            display: flex;
+            gap: 32px;
+            flex-wrap: wrap;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .checkbox-item input {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .checkbox-item label {
+            margin: 0;
+            cursor: pointer;
+        }
+
+        .checkbox-sub {
+            font-size: 12px;
+            color: #adb5bd;
+            margin-left: 4px;
+        }
+
+        /* Study Type Timepoints Section */
+        .study-timepoints-section {
+            margin-top: 16px;
+            margin-bottom: 20px;
+            padding: 16px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            border-left: 4px solid #667eea;
+        }
+
+        .study-timepoints-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .study-timepoints-header h4 {
+            font-size: 14px;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .timepoint-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .timepoint-actions button {
+            padding: 4px 12px;
+            font-size: 12px;
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .timepoint-actions button:hover {
+            background: #e9ecef;
+        }
+
+        .timepoints-checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .timepoint-checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .timepoint-checkbox-item input {
+            width: 16px;
+            height: 16px;
+            margin: 0;
+        }
+
+        .timepoint-checkbox-item label {
+            margin: 0;
+            font-size: 13px;
+            font-weight: normal;
+            cursor: pointer;
+        }
+
+        /* Radio Group */
+        .radio-group {
+            display: flex;
+            gap: 24px;
+            flex-wrap: wrap;
+        }
+
+        .radio-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .radio-item input {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+
+        .radio-item label {
+            margin: 0;
+            cursor: pointer;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            color: #495057;
+        }
+
+        .btn-secondary:hover {
+            background: #e9ecef;
+        }
+
+        .btn-danger {
+            background: #fff5f5;
+            color: #e74c3c;
+            border: 1px solid #ffe3e3;
+        }
+
+        .btn-danger:hover {
+            background: #ffe3e3;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        /* Table */
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 16px 12px;
+            text-align: left;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        th {
+            font-weight: 600;
+            font-size: 13px;
+            color: #868e96;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        /* Search */
+        .search-box {
+            margin-bottom: 20px;
+        }
+
+        .search-box input {
+            max-width: 300px;
+        }
+
+        /* Badges */
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .badge-acc { background: #fff3e0; color: #e67700; }
+        .badge-int { background: #e3fafc; color: #0b7285; }
+        .badge-rt { background: #e9ecef; color: #495057; }
+        .badge-rt-30 { background: #ffe0e0; color: #c92a2a; }
+        .badge-rt-25 { background: #e0f2ff; color: #1864ab; }
+        .badge-st { background: #f3d9fa; color: #9c27b0; }
+        .badge-category { background: #e6f7e6; color: #2b8a3e; }
+        .badge-completed { background: #d3f9d8; color: #2b8a3e; }
+
+        /* Schedule List Item - Completed Style */
+        .schedule-list-item {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 16px 20px;
+            border-left: 4px solid #667eea;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            transition: all 0.3s;
+        }
+
+        .schedule-list-item.completed {
+            background: #e8f5e9;
+            border-left-color: #4caf50;
+            opacity: 0.85;
+        }
+
+        .schedule-list-item:hover {
+            background: #e9ecef;
+        }
+
+        .schedule-list-item.completed:hover {
+            background: #c8e6c9;
+        }
+
+        .schedule-info {
+            flex: 2;
+        }
+
+        .schedule-info h4 {
+            font-size: 15px;
+            margin-bottom: 6px;
+        }
+
+        .schedule-details {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            font-size: 13px;
+            color: #666;
+        }
+
+        .schedule-details span {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .schedule-status {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .completed-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: #4caf50;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        /* Timepoint Settings */
+        .study-type-section {
+            margin-bottom: 32px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 16px;
+        }
+
+        .study-type-section h3 {
+            margin-bottom: 16px;
+            font-size: 18px;
+        }
+
+        .timepoint-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .timepoint-tag {
+            background: white;
+            border: 1px solid #e9ecef;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+        }
+
+        .timepoint-input-group {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .timepoint-input-group input {
+            width: 120px;
+        }
+
+        /* Month View - LIST STYLE */
+        .schedule-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #adb5bd;
+        }
+
+        /* Alert */
+        .alert {
+            padding: 12px 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+
+        .alert-success {
+            background: #d3f9d8;
+            color: #2b8a3e;
+        }
+
+        .alert-error {
+            background: #ffe3e3;
+            color: #e03131;
+        }
+
+        .settings-note {
+            font-size: 12px;
+            color: #868e96;
+            margin-top: 20px;
+            padding: 12px;
+            background: #fff3bf;
+            border-radius: 12px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <div class="sidebar">
+            <div class="logo">
+                <h1>🧪 StabTrack Pro</h1>
+                <p>Supabase Cloud</p>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item active" onclick="showPage('dashboard')">📊 Dashboard</li>
+                <li class="nav-item" onclick="showPage('add-sample')">➕ Add Sample</li>
+                <li class="nav-item" onclick="showPage('all-samples')">📋 All Samples</li>
+                <li class="nav-item" onclick="showPage('monthly-view')">📅 Monthly View</li>
+                <li class="nav-item" onclick="showPage('settings')">⚙️ Settings</li>
+            </ul>
+        </div>
+
+        <div class="main-content">
+            <!-- Dashboard Page -->
+            <div id="dashboard-page">
+                <div class="stats-grid">
+                    <div class="stat-card"><h3 id="total-samples">0</h3><p>Total Samples</p></div>
+                    <div class="stat-card"><h3 id="due-this-month">0</h3><p>Due This Month</p></div>
+                    <div class="stat-card"><h3 id="upcoming-total">0</h3><p>Upcoming Analyses</p></div>
+                    <div class="stat-card"><h3 id="completed-total">0</h3><p>Completed Analyses</p></div>
+                </div>
+                <div class="card"><div class="card-header"><h2>📋 Due This Month</h2></div><div id="due-list"></div></div>
+            </div>
+
+            <!-- Add Sample Page -->
+            <div id="add-sample-page" style="display: none;">
+                <div class="card">
+                    <h2>➕ Register New Stability Sample</h2>
+                    <form id="sample-form">
+                        <div class="form-group"><label>Sample Name</label><input type="text" id="sample-name" required placeholder="e.g. Product A Tablet"></div>
+                        <div class="form-group"><label>Batch Number</label><input type="text" id="batch-number" required placeholder="e.g. BN-2024-001"></div>
+                        <div class="form-group"><label>Received Date</label><input type="date" id="received-date" required></div>
+                        <div class="form-group"><label>Study Types</label>
+                            <div id="study-types-container">
+                                <div><div class="checkbox-item"><input type="checkbox" value="ACC" id="study-acc" onchange="toggleStudyTimepoints('ACC')"><label for="study-acc">ACC <span class="checkbox-sub">(Accelerated)</span></label></div>
+                                <div id="timepoints-ACC" class="study-timepoints-section" style="display:none;"><div class="study-timepoints-header"><h4>Timepoints</h4><div class="timepoint-actions"><button type="button" onclick="selectAllTimepoints('ACC')">Select all</button><button type="button" onclick="clearAllTimepoints('ACC')">Clear</button></div></div><div id="timepoints-checkbox-ACC" class="timepoints-checkbox-group"></div></div></div>
+                                <div><div class="checkbox-item"><input type="checkbox" value="INT" id="study-int" onchange="toggleStudyTimepoints('INT')"><label for="study-int">INT <span class="checkbox-sub">(Intermediate)</span></label></div>
+                                <div id="timepoints-INT" class="study-timepoints-section" style="display:none;"><div class="study-timepoints-header"><h4>Timepoints</h4><div class="timepoint-actions"><button type="button" onclick="selectAllTimepoints('INT')">Select all</button><button type="button" onclick="clearAllTimepoints('INT')">Clear</button></div></div><div id="timepoints-checkbox-INT" class="timepoints-checkbox-group"></div></div></div>
+                                <div><div class="checkbox-item"><input type="checkbox" value="RT" id="study-rt" onchange="toggleStudyTimepoints('RT')"><label for="study-rt">RT <span class="checkbox-sub">(Room Temperature)</span></label></div>
+                                <div id="timepoints-RT" class="study-timepoints-section" style="display:none;"><div class="study-timepoints-header"><h4>Temperature & Timepoints</h4><div class="timepoint-actions"><button type="button" onclick="selectAllTimepoints('RT')">Select all</button><button type="button" onclick="clearAllTimepoints('RT')">Clear</button></div></div><div class="form-group"><label>Temperature</label><div class="radio-group"><div class="radio-item"><input type="radio" name="rt-temperature" value="30°C" id="rt-temp-30" checked><label for="rt-temp-30">30°C</label></div><div class="radio-item"><input type="radio" name="rt-temperature" value="25°C" id="rt-temp-25"><label for="rt-temp-25">25°C</label></div></div></div><div id="timepoints-checkbox-RT" class="timepoints-checkbox-group"></div></div></div>
+                                <div><div class="checkbox-item"><input type="checkbox" value="ST" id="study-st" onchange="toggleStudyTimepoints('ST')"><label for="study-st">ST <span class="checkbox-sub">(Stressed Test)</span></label></div>
+                                <div id="timepoints-ST" class="study-timepoints-section" style="display:none;"><div class="study-timepoints-header"><h4>Timepoints</h4><div class="timepoint-actions"><button type="button" onclick="selectAllTimepoints('ST')">Select all</button><button type="button" onclick="clearAllTimepoints('ST')">Clear</button></div></div><div id="timepoints-checkbox-ST" class="timepoints-checkbox-group"></div></div></div>
+                            </div>
+                        </div>
+                        <div class="form-group"><label>Sample Category</label><div class="radio-group" id="sample-category"><div class="radio-item"><input type="radio" name="category" value="Validasi" id="cat-validasi"><label for="cat-validasi">Validasi</label></div><div class="radio-item"><input type="radio" name="category" value="Trial" id="cat-trial"><label for="cat-trial">Trial</label></div><div class="radio-item"><input type="radio" name="category" value="Pilot" id="cat-pilot"><label for="cat-pilot">Pilot</label></div><div class="radio-item"><input type="radio" name="category" value="Deviasi" id="cat-deviasi"><label for="cat-deviasi">Deviasi</label></div><div class="radio-item"><input type="radio" name="category" value="Others" id="cat-others" checked><label for="cat-others">Others</label></div></div></div>
+                        <div class="form-group"><label>Notes</label><textarea id="notes" rows="3" placeholder="e.g. Validation batch"></textarea></div>
+                        <div class="btn-group"><button type="submit" class="btn btn-primary">➕ Add Sample</button><button type="button" class="btn btn-secondary" onclick="clearForm()">Clear</button></div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- All Samples Page -->
+            <div id="all-samples-page" style="display: none;"><div class="card"><h2>📋 All Samples</h2><div class="search-box"><input type="text" id="search-input" placeholder="Search..." onkeyup="loadSamples()"></div><div class="table-wrapper"><table><thead><tr><th>Sample Name</th><th>Batch</th><th>Received</th><th>Category</th><th>Study Types</th><th>Actions</th></tr></thead><tbody id="samples-table"></tbody></table></div></div></div>
+
+            <!-- Monthly View -->
+            <div id="monthly-view-page" style="display: none;"><div class="card"><div class="card-header"><h2>📅 Browse Analysis Schedules</h2></div><div class="month-header"><div class="month-nav"><button class="btn btn-secondary" onclick="changeMonth(-1)">← Prev</button><span class="month-year" id="month-year"></span><button class="btn btn-secondary" onclick="changeMonth(1)">Next →</button></div></div><div id="monthly-schedules"></div></div></div>
+
+            <!-- Settings -->
+            <div id="settings-page" style="display: none;"><div class="card"><h2>⚙️ Settings</h2><p style="color:#868e96; margin-bottom:24px;">Global timepoints (affects new samples only)</p><div id="timepoints-settings"></div><div class="btn-group"><button class="btn btn-primary" onclick="saveAllTimepoints()">💾 Save Settings</button><button class="btn btn-secondary" onclick="resetToDefaults()">🔄 Reset Defaults</button></div><div class="settings-note">⚠️ Changes only apply to new samples. Existing samples retain original timepoints.</div></div></div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== SUPABASE CONFIG ====================
+        // REPLACE WITH YOUR SUPABASE URL AND ANON KEY (from project settings)
+        const SUPABASE_URL = 'https://kzksbhhuavimayemiajq.supabase.co/rest/v1/';      // <-- GANTI DENGAN URL SUPABASE ANDA
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6a3NiaGh1YXZpbWF5ZW1pYWpxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxODI2NzAsImV4cCI6MjA5Mzc1ODY3MH0.PU1-tE0a_GIJteKCoyY9rcQf2xzVycNID8PCuXw10ws';                  // <-- GANTI DENGAN ANON KEY ANDA
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        // Global state
+        let samples = [];
+        let schedules = [];
+        let timepointsConfig = { ACC: [3,6,9,12,18,24], INT: [3,6,9,12,18,24], RT: [3,6,9,12,18,24,36], ST: [1,2,3,6] };
+        let currentDate = new Date();
+        let selectedTimepoints = { ACC: [], INT: [], RT: [], ST: [] };
+
+        // ============ INIT & DATA LOADING ============
+        async function loadAllData() {
+            try {
+                // Load samples
+                const { data: samplesData, error: samplesError } = await supabase.from('samples').select('*').order('created_at', { ascending: false });
+                if (samplesError) throw samplesError;
+                samples = samplesData || [];
+                
+                // Load schedules
+                const { data: schedulesData, error: schedulesError } = await supabase.from('schedules').select('*');
+                if (schedulesError) throw schedulesError;
+                schedules = schedulesData || [];
+                
+                // Load config
+                const { data: configData, error: configError } = await supabase.from('app_config').select('*').eq('key', 'timepoints').single();
+                if (!configError && configData && configData.value) {
+                    timepointsConfig = configData.value;
+                } else {
+                    await saveTimepointsToSupabase();
+                }
+                
+                initTimepointsCheckboxes();
+                loadDashboard();
+            } catch (err) {
+                console.error("Failed to load data:", err);
+                alert("Error connecting to Supabase. Check URL/Key or ensure tables exist.");
+            }
+        }
+        
+        async function saveTimepointsToSupabase() {
+            await supabase.from('app_config').upsert({ key: 'timepoints', value: timepointsConfig, updated_at: new Date() });
+        }
+        
+        async function saveSampleToSupabase(sample) {
+            const { data, error } = await supabase.from('samples').insert(sample).select();
+            if (error) throw error;
+            return data[0];
+        }
+        
+        async function saveScheduleToSupabase(schedule) {
+            const { error } = await supabase.from('schedules').insert(schedule);
+            if (error) throw error;
+        }
+        
+        async function updateScheduleComplete(scheduleId, completed) {
+            const { error } = await supabase.from('schedules').update({ is_completed: completed }).eq('id', scheduleId);
+            if (error) throw error;
+        }
+        
+        async function deleteSampleFromSupabase(sampleId) {
+            // Delete schedules first
+            await supabase.from('schedules').delete().eq('sample_id', sampleId);
+            const { error } = await supabase.from('samples').delete().eq('id', sampleId);
+            if (error) throw error;
+        }
+
+        // ============ UI HELPERS ============
+        function initTimepointsCheckboxes() {
+            ['ACC','INT','RT','ST'].forEach(code => {
+                const container = document.getElementById(`timepoints-checkbox-${code}`);
+                if(container) {
+                    const tps = timepointsConfig[code] || [];
+                    container.innerHTML = tps.map(months => `<div class="timepoint-checkbox-item"><input type="checkbox" value="${months}" id="tp-${code}-${months}" onchange="updateSelectedTimepoints('${code}')"><label for="tp-${code}-${months}">${months} months</label></div>`).join('');
+                }
+                selectedTimepoints[code] = [];
+            });
+        }
+        
+        function toggleStudyTimepoints(studyCode) {
+            const cb = document.getElementById(`study-${studyCode.toLowerCase()}`);
+            const div = document.getElementById(`timepoints-${studyCode}`);
+            if(cb && cb.checked) {
+                if(div) div.style.display = 'block';
+                selectAllTimepoints(studyCode);
+            } else {
+                if(div) div.style.display = 'none';
+                selectedTimepoints[studyCode] = [];
+            }
+        }
+        
+        function selectAllTimepoints(code) {
+            document.querySelectorAll(`#timepoints-checkbox-${code} input`).forEach(cb => cb.checked = true);
+            updateSelectedTimepoints(code);
+        }
+        
+        function clearAllTimepoints(code) {
+            document.querySelectorAll(`#timepoints-checkbox-${code} input`).forEach(cb => cb.checked = false);
+            updateSelectedTimepoints(code);
+        }
+        
+        function updateSelectedTimepoints(code) {
+            const checked = [...document.querySelectorAll(`#timepoints-checkbox-${code} input:checked`)].map(cb => parseInt(cb.value));
+            selectedTimepoints[code] = checked;
+        }
+        
+        function getSelectedRTTemperature() { return document.getElementById('rt-temp-30').checked ? '30°C' : '25°C'; }
+        
+        function formatDate(dateStr) { return dateStr ? new Date(dateStr).toLocaleDateString('en-GB') : '-'; }
+        function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'})[m]); }
+
+        // ============ DASHBOARD ============
+        async function loadDashboard() {
+            document.getElementById('total-samples').textContent = samples.length;
+            const now = new Date();
+            const dueThisMonth = schedules.filter(s => !s.is_completed && new Date(s.due_date).getMonth() === now.getMonth() && new Date(s.due_date).getFullYear() === now.getFullYear());
+            document.getElementById('due-this-month').textContent = dueThisMonth.length;
+            document.getElementById('upcoming-total').textContent = schedules.filter(s => !s.is_completed).length;
+            document.getElementById('completed-total').textContent = schedules.filter(s => s.is_completed).length;
+            
+            const dueList = document.getElementById('due-list');
+            if(dueThisMonth.length === 0) dueList.innerHTML = '<div class="empty-state">✅ No analyses due this month.</div>';
+            else {
+                dueList.innerHTML = `<div class="schedule-list">${dueThisMonth.map(s => {
+                    const sample = samples.find(sm => sm.id === s.sample_id);
+                    let badgeClass = {ACC:'badge-acc',INT:'badge-int',ST:'badge-st',RT: (s.rt_temperature === '30°C' ? 'badge-rt-30' : 'badge-rt-25')}[s.study_code] || 'badge-rt';
+                    return `<div class="schedule-list-item"><div class="schedule-info"><h4>${escapeHtml(sample?.name)} (${escapeHtml(sample?.batch_number)})</h4><div class="schedule-details"><span>📅 Due: ${formatDate(s.due_date)}</span><span class="badge ${badgeClass}">${s.study_code}${s.rt_temperature ? ' '+s.rt_temperature : ''}</span><span>📊 Month ${s.months}</span><span>🏷️ ${sample?.category || '-'}</span></div></div><div class="schedule-status"><button class="btn btn-secondary" onclick="markComplete('${s.id}')">✓ Mark Complete</button></div></div>`;
+                }).join('')}</div>`;
+            }
+        }
+        
+        async function markComplete(scheduleId) {
+            const schedule = schedules.find(s => s.id === scheduleId);
+            if(schedule) {
+                await updateScheduleComplete(scheduleId, true);
+                schedule.is_completed = true;
+                loadDashboard();
+                if(document.getElementById('monthly-view-page').style.display !== 'none') loadMonthlyView();
+                if(document.getElementById('all-samples-page').style.display !== 'none') loadSamples();
+            }
+        }
+        
+        // ============ ADD SAMPLE ============
+        document.getElementById('sample-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('sample-name').value.trim();
+            const batch_number = document.getElementById('batch-number').value.trim();
+            const received_date = document.getElementById('received-date').value;
+            const notes = document.getElementById('notes').value;
+            const category = document.querySelector('input[name="category"]:checked')?.value || 'Others';
+            const studyTypes = [];
+            const selectedTps = {};
+            let rtTemperature = null;
+            
+            if(document.getElementById('study-acc').checked) { studyTypes.push('ACC'); if(selectedTimepoints.ACC.length) selectedTps.ACC = selectedTimepoints.ACC; }
+            if(document.getElementById('study-int').checked) { studyTypes.push('INT'); if(selectedTimepoints.INT.length) selectedTps.INT = selectedTimepoints.INT; }
+            if(document.getElementById('study-rt').checked) { studyTypes.push('RT'); if(selectedTimepoints.RT.length) selectedTps.RT = selectedTimepoints.RT; rtTemperature = getSelectedRTTemperature(); }
+            if(document.getElementById('study-st').checked) { studyTypes.push('ST'); if(selectedTimepoints.ST.length) selectedTps.ST = selectedTimepoints.ST; }
+            
+            if(studyTypes.length === 0) return alert('Select at least one study type');
+            for(let st of studyTypes) if(!selectedTps[st]?.length) return alert(`Select timepoints for ${st}`);
+            
+            const sampleId = crypto.randomUUID ? crypto.randomUUID() : Date.now().toString();
+            const newSample = { id: sampleId, name, batch_number, received_date, notes, category, study_types: studyTypes, rt_temperature: rtTemperature, selected_timepoints: selectedTps, created_at: new Date().toISOString() };
+            
+            try {
+                await saveSampleToSupabase(newSample);
+                const newSchedules = [];
+                for(let studyCode of studyTypes) {
+                    for(let months of (selectedTps[studyCode] || [])) {
+                        const dueDate = new Date(received_date);
+                        dueDate.setMonth(dueDate.getMonth() + months);
+                        const schedule = { id: crypto.randomUUID?.() || Date.now()+Math.random(), sample_id: sampleId, study_code: studyCode, rt_temperature: studyCode === 'RT' ? rtTemperature : null, months, due_date: dueDate.toISOString().split('T')[0], is_completed: false };
+                        newSchedules.push(schedule);
+                        await saveScheduleToSupabase(schedule);
+                    }
+                }
+                samples.push(newSample);
+                schedules.push(...newSchedules);
+                alert('✅ Sample added!');
+                clearForm();
+                loadDashboard();
+                showPage('all-samples');
+                loadSamples();
+            } catch(err) { console.error(err); alert('Failed to save: '+err.message); }
+        });
+        
+        function clearForm() {
+            document.getElementById('sample-name').value = '';
+            document.getElementById('batch-number').value = '';
+            document.getElementById('received-date').value = '';
+            document.getElementById('notes').value = '';
+            document.getElementById('cat-others').checked = true;
+            document.getElementById('rt-temp-30').checked = true;
+            ['ACC','INT','RT','ST'].forEach(c => {
+                const cb = document.getElementById(`study-${c.toLowerCase()}`);
+                if(cb) { cb.checked = false; document.getElementById(`timepoints-${c}`).style.display = 'none'; }
+                selectedTimepoints[c] = [];
+                document.querySelectorAll(`#timepoints-checkbox-${c} input`).forEach(ch => ch.checked = false);
+            });
+        }
+        
+        // ============ ALL SAMPLES ============
+        async function loadSamples() {
+            const search = document.getElementById('search-input')?.value.toLowerCase() || '';
+            const filtered = samples.filter(s => s.name.toLowerCase().includes(search) || s.batch_number.toLowerCase().includes(search) || (s.notes && s.notes.toLowerCase().includes(search)));
+            const tbody = document.getElementById('samples-table');
+            if(filtered.length === 0) { tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state">📭 No samples</div></td></tr>'; return; }
+            tbody.innerHTML = filtered.map(s => `<tr><td><strong>${escapeHtml(s.name)}</strong></td><td>${escapeHtml(s.batch_number)}</td><td>${formatDate(s.received_date)}</td><td><span class="badge badge-category">${s.category || 'Others'}</span></td><td>${s.study_types.map(st => { let cls = {ACC:'badge-acc',INT:'badge-int',ST:'badge-st',RT: (s.rt_temperature === '30°C' ? 'badge-rt-30' : 'badge-rt-25')}[st] || 'badge-rt'; return `<span class="badge ${cls}">${st}${st==='RT' && s.rt_temperature ? ' '+s.rt_temperature : ''}</span>`; }).join(' ')}</td><td><button class="btn btn-danger" onclick="deleteSample('${s.id}')">🗑️ Delete</button></td></tr>`).join('');
+        }
+        
+        async function deleteSample(sampleId) {
+            if(!confirm('Delete sample and all schedules?')) return;
+            try {
+                await deleteSampleFromSupabase(sampleId);
+                samples = samples.filter(s => s.id !== sampleId);
+                schedules = schedules.filter(s => s.sample_id !== sampleId);
+                loadSamples();
+                loadDashboard();
+                if(document.getElementById('monthly-view-page').style.display !== 'none') loadMonthlyView();
+            } catch(err) { alert('Delete failed'); }
+        }
+        
+        // ============ MONTHLY VIEW ============
+        async function loadMonthlyView() {
+            const year = currentDate.getFullYear(), month = currentDate.getMonth();
+            const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+            document.getElementById('month-year').textContent = `${monthNames[month]} ${year}`;
+            const monthSchedules = schedules.filter(s => { const d = new Date(s.due_date); return d.getMonth() === month && d.getFullYear() === year; }).sort((a,b)=>new Date(a.due_date)-new Date(b.due_date));
+            const container = document.getElementById('monthly-schedules');
+            if(monthSchedules.length === 0) container.innerHTML = '<div class="empty-state">📭 No schedules</div>';
+            else {
+                container.innerHTML = `<div class="schedule-list">${monthSchedules.map(s => {
+                    const sample = samples.find(sm => sm.id === s.sample_id);
+                    let badgeClass = {ACC:'badge-acc',INT:'badge-int',ST:'badge-st',RT: (s.rt_temperature === '30°C' ? 'badge-rt-30' : 'badge-rt-25')}[s.study_code] || 'badge-rt';
+                    return `<div class="schedule-list-item ${s.is_completed ? 'completed' : ''}"><div class="schedule-info"><h4>${escapeHtml(sample?.name)} (${escapeHtml(sample?.batch_number)})</h4><div class="schedule-details"><span>📅 Due: ${formatDate(s.due_date)}</span><span class="badge ${badgeClass}">${s.study_code}${s.rt_temperature ? ' '+s.rt_temperature : ''}</span><span>📊 Month ${s.months}</span><span>🏷️ ${sample?.category || '-'}</span>${s.is_completed ? '<span class="completed-badge">✅ Completed</span>' : ''}</div></div><div class="schedule-status">${!s.is_completed ? `<button class="btn btn-secondary" onclick="markComplete('${s.id}')">✓ Mark Complete</button>` : ''}</div></div>`;
+                }).join('')}</div>`;
+            }
+        }
+        
+        function changeMonth(delta) { currentDate.setMonth(currentDate.getMonth() + delta); loadMonthlyView(); }
+        
+        // ============ SETTINGS ============
+        function loadSettingsPage() {
+            const container = document.getElementById('timepoints-settings');
+            container.innerHTML = Object.entries({ACC:'ACC: Accelerated',INT:'INT: Intermediate',RT:'RT: Room Temperature',ST:'ST: Stressed Test'}).map(([code, name]) => `<div class="study-type-section"><h3>${name}</h3><div class="timepoint-list" id="timepoint-list-${code}">${(timepointsConfig[code]||[]).map(m=>`<span class="timepoint-tag">${m} months</span>`).join('')}</div><div class="timepoint-input-group"><input type="number" id="new-timepoint-${code}" placeholder="Months" min="1"><button class="btn btn-secondary" onclick="addTimepoint('${code}')">+ Add</button></div></div>`).join('');
+        }
+        
+        async function addTimepoint(studyCode) {
+            const input = document.getElementById(`new-timepoint-${studyCode}`);
+            const months = parseInt(input.value);
+            if(!months || months <=0) return alert('Valid months');
+            if(!timepointsConfig[studyCode]) timepointsConfig[studyCode] = [];
+            if(!timepointsConfig[studyCode].includes(months)) {
+                timepointsConfig[studyCode].push(months);
+                timepointsConfig[studyCode].sort((a,b)=>a-b);
+                await saveTimepointsToSupabase();
+                initTimepointsCheckboxes();
+                loadSettingsPage();
+            }
+            input.value = '';
+        }
+        
+        async function saveAllTimepoints() { await saveTimepointsToSupabase(); alert('✅ Settings saved (new samples only)'); }
+        async function resetToDefaults() {
+            timepointsConfig = { ACC: [3,6,9,12,18,24], INT: [3,6,9,12,18,24], RT: [3,6,9,12,18,24,36], ST: [1,2,3,6] };
+            await saveTimepointsToSupabase();
+            initTimepointsCheckboxes();
+            loadSettingsPage();
+            alert('Reset to defaults');
+        }
+        
+        // ============ NAVIGATION ============
+        function showPage(page) {
+            document.querySelectorAll('[id$="-page"]').forEach(p => p.style.display = 'none');
+            document.getElementById(`${page}-page`).style.display = 'block';
+            document.querySelectorAll('.nav-item').forEach((item, idx) => { if(item.innerText.toLowerCase().includes(page.replace('-',' '))) item.classList.add('active'); else item.classList.remove('active'); });
+            if(page === 'dashboard') loadDashboard();
+            if(page === 'all-samples') loadSamples();
+            if(page === 'monthly-view') { currentDate = new Date(); loadMonthlyView(); }
+            if(page === 'settings') loadSettingsPage();
+        }
+        
+        // Global exports
+        window.showPage = showPage; window.markComplete = markComplete; window.deleteSample = deleteSample;
+        window.changeMonth = changeMonth; window.addTimepoint = addTimepoint; window.saveAllTimepoints = saveAllTimepoints;
+        window.resetToDefaults = resetToDefaults; window.loadSamples = loadSamples; window.clearForm = clearForm;
+        window.toggleStudyTimepoints = toggleStudyTimepoints; window.selectAllTimepoints = selectAllTimepoints;
+        window.clearAllTimepoints = clearAllTimepoints; window.updateSelectedTimepoints = updateSelectedTimepoints;
+        
+        // Start app
+        loadAllData();
+    </script>
+</body>
+</html>
